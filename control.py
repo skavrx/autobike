@@ -155,13 +155,13 @@ while not exitRequested:
                     PIDoutput, motorCtrl])
     
     #debug print
-    if (perf_counter_ns() - prevPrintTime) / 1e9 >= 1.0:
-        secondsSinceLastPrint = (perf_counter_ns() - prevPrintTime) / 1e9
-        prevPrintTime = perf_counter_ns()
-        loopInterval = secondsSinceLastPrint / loopCount * 1000
-        loopCount = 0
-        print("measuredAngle: %.2f, motorCtrl: %.2f, loopInterval: %.2f ms"
-              % (measuredAngle, motorCtrl, loopInterval))
+    #if (perf_counter_ns() - prevPrintTime) / 1e9 >= 1.0:
+    #    secondsSinceLastPrint = (perf_counter_ns() - prevPrintTime) / 1e9
+    #    prevPrintTime = perf_counter_ns()
+    #    loopInterval = secondsSinceLastPrint / loopCount * 1000
+    #    loopCount = 0
+    #    print("measuredAngle: %.2f, motorCtrl: %.2f, loopInterval: %.2f ms"
+    #          % (measuredAngle, motorCtrl, loopInterval))
     
     sleep(SLEEP_TIME / 1000)
     loopCount += 1
