@@ -38,8 +38,10 @@ from mpu9250_jmdev.registers import *
 from mpu9250_jmdev.mpu_9250 import MPU9250
 
 imu = MPU9250(bus=1, gfs=GFS_250, afs=AFS_2G)
-imu.abias = [-0.036993408203125, 0.0659057671875, 0.007368039843749911]
-imu.gbias = [-0.5022048950195312, 0.7293076171874999, -0.01735687255859375]
+imu.calibrateMPU6500()
+
+#imu.abias = [-0.036993408203125, 0.0659057671875, 0.007368039843749911]
+#imu.gbias = [-0.5022048950195312, 0.7293076171874999, -0.01735687255859375]
 imu.configure()
 
 #exit program when Ctrl-C is pressed
