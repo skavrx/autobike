@@ -26,7 +26,6 @@ SLEEP_TIME        = 1     #main loop sleep [ms]
 
 import odrive
 from odrive.enums import *
-import RPi.GPIO as GPIO
 
 import time
 from time import sleep, perf_counter_ns
@@ -34,9 +33,6 @@ from datetime import datetime
 import math
 import signal
 import smbus
-
-from gpiozero import DigitalInputDevice, DigitalOutputDevice, PWMOutputDevice
-from gpiozero.pins.pigpio import PiGPIOFactory
 
 from mpu9250_jmdev.registers import *
 from mpu9250_jmdev.mpu_9250 import MPU9250
