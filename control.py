@@ -13,7 +13,7 @@ ANGLE_LIMIT       = 10    #stop program / start rise up sequence [deg]
 RISEUP_END_ANGLE  = 5     #stop rise up sequence and start balancing [deg]
 ANGLE_FIXRATE     = 1.0   #variate target angle [deg/s]
 ANGLE_FIXRATE_2   = 0.1   #reduce continuous rotation
-KP                = 12.7  #PID proportional factor
+KP                = 13  #PID proportional factor
 KI                = 0   #PID integral factor
 KD                = 0.2 #PID derivative factor
 MOTOR_R           = 13    #motor resistance [Ohm]
@@ -153,15 +153,6 @@ while not exitRequested:
     logData.append([secondsSinceStart, accAngle, gyroAngle, measuredAngle, targetAngle,
                 wheelAV, error, integral, derivative,
                     PIDoutput, motorCtrl])
-    
-    #debug print
-    #if (perf_counter_ns() - prevPrintTime) / 1e9 >= 1.0:
-    #    secondsSinceLastPrint = (perf_counter_ns() - prevPrintTime) / 1e9
-    #    prevPrintTime = perf_counter_ns()
-    #    loopInterval = secondsSinceLastPrint / loopCount * 1000
-    #    loopCount = 0
-    #    print("measuredAngle: %.2f, motorCtrl: %.2f, loopInterval: %.2f ms"
-    #          % (measuredAngle, motorCtrl, loopInterval))
     
     sleep(SLEEP_TIME / 1000)
     loopCount += 1
