@@ -9,7 +9,7 @@
 
 #settings
 ANGLE_FILTER_G    = 0.999 #gyro portion of complementary filter [0...1]
-ANGLE_LIMIT       = 10    #stop program / start rise up sequence [deg]
+ANGLE_LIMIT       = 5    #stop program / start rise up sequence [deg]
 RISEUP_END_ANGLE  = 5     #stop rise up sequence and start balancing [deg]
 ANGLE_FIXRATE     = 1.0   #variate target angle [deg/s]
 ANGLE_FIXRATE_2   = 0.1   #reduce continuous rotation
