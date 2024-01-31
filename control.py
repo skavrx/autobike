@@ -148,7 +148,7 @@ while not exitRequested:
         integral += error * timeDelta
         derivative = (error - prevError) / timeDelta
         prevError = error
-        PIDoutput = max(min(KP * error + KI * integral + KD * derivative, 20), -20)
+        PIDoutput = max(min(KP * error + KI * integral + KD * derivative, 10), -10)
 
         print("Target:" + str(PIDoutput))
         odrv0.axis0.controller.input_vel = -PIDoutput # Should be in [turns/s] for odrive input
