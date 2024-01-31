@@ -124,13 +124,9 @@ while not exitRequested:
             print("PROGRAM STOPPED, angle is too large\nmeasuredAngle: %.2f\naccAngle: %.2f\ngyroAngleDelta: %.2f" % (measuredAngle, accAngle, gyroAngleDelta))
             break    
     
-    #calculate wheel angular velocity
-    if (perf_counter_ns() - prevTachoTime) / 1e6 >= WHEEL_AV_INTERVAL:
-        tachoTimeDelta = (perf_counter_ns() - prevTachoTime) / 1e9  #[sec]
-        prevTachoTime = perf_counter_ns()
-        
-        tps = odrv0.axis0.pos_vel_mapper.vel 
-        wheelAV = tps * 2 * math.pi 
+    #calculate wheel angular velocity  
+    tps = odrv0.axis0.pos_vel_mapper.vel 
+    wheelAV = tps * 2 * math.pi 
 
     if not risingUp:
     
