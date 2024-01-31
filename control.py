@@ -9,7 +9,7 @@
 
 #settings
 ANGLE_FILTER_G    = 0.999 #gyro portion of complementary filter [0...1]
-ANGLE_LIMIT       = 18    #stop program / start rise up sequence [deg]
+ANGLE_LIMIT       = 10    #stop program / start rise up sequence [deg]
 RISEUP_END_ANGLE  = 5     #stop rise up sequence and start balancing [deg]
 ANGLE_FIXRATE     = 1.0   #variate target angle [deg/s]
 ANGLE_FIXRATE_2   = 0.1   #reduce continuous rotation
@@ -93,20 +93,18 @@ while not exitRequested:
     timeDelta = (perf_counter_ns() - prevLoopTime) / 1e9  #[sec]
     prevLoopTime = perf_counter_ns()
     secondsSinceStart = (perf_counter_ns() - startTime) / 1e9
-    #imu.computeOrientation()
 
     #read accelerometer
     axr, ayr, azr = imu.readAccelerometerMaster()
     print(f"Axr: {axr} Ayr: {ayr} Azr: {azr}")
+    
     ax, ay, az = ayr, -1 * azr, -1 * axr
-    # ax, ay, az = imu.AccelVals[0], imu.AccelVals[1], imu.AccelVals[2]
-    # ax, ay, az = imu.readAccelerometerMaster()  #[G]
     accAngle = math.atan(-ax / math.sqrt(pow(ay, 2) + pow(az, 2))) * 180 / math.pi  #[deg]
     print("AccAngle: " + str(accAngle))
+    
     #read gyroscope
     gxr, gyr, gzr = imu.readGyroscopeMaster()
     gx, gy, gz = gyr, -1 * gzr, -1 * gxr
-    #gx, gy, gz = imu.readGyroscopeMaster()  #[deg/s]
     gyroAngleDelta = gy * timeDelta
     if math.isnan(gyroAngle): gyroAngle = accAngle
     gyroAngle += gyroAngleDelta  #[deg]
@@ -129,10 +127,6 @@ while not exitRequested:
         tachoTimeDelta = (perf_counter_ns() - prevTachoTime) / 1e9  #[sec]
         prevTachoTime = perf_counter_ns()
         
-        #pulses = tachoCount - prevTachoCount
-        #prevTachoCount = tachoCount
-        #cycles = pulses / 360   #360 pulses per rotation
-        #wheelAV = cycles / tachoTimeDelta * 2 * math.pi  #[rad/s]
         tps = odrv0.axis0.pos_vel_mapper.vel 
         wheelAV = tps * 2 * math.pi 
 
@@ -153,19 +147,9 @@ while not exitRequested:
         derivative = (error - prevError) / timeDelta
         prevError = error
         PIDoutput = KP * error + KI * integral + KD * derivative
-        
-        #compensate for motor back EMF voltage
-        #current = -PIDoutput
-        #voltage = MOTOR_R * current # + MOTOR_Ke * wheelAV
-        
-        #convert voltage to pwm duty cycle
-        #motorCtrl = voltage / SUPPLY_VOLTAGE
+
         print("Target:" + str(PIDoutput))
         odrv0.axis0.controller.input_vel = PIDoutput # Should be in [turns/s] for odrive input
-        
-        #drive motor
-        #motorCtrl = min(max(motorCtrl, -1), 1)  #limit range to -1...1
-        #motorPWM.value = abs(motorCtrl)
     
     #log data for post analysis
     logData.append([secondsSinceStart, accAngle, gyroAngle, measuredAngle, targetAngle,
