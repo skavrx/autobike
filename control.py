@@ -151,7 +151,7 @@ while not exitRequested:
         PIDoutput = max(min(KP * error + KI * integral + KD * derivative, 10), -10)
 
         print("Target:" + str(PIDoutput))
-        odrv0.axis0.controller.input_vel = -PIDoutput # Should be in [turns/s] for odrive input
+        odrv0.axis0.controller.input_vel = PIDoutput # Should be in [turns/s] for odrive input
     
     #log data for post analysis
     logData.append([secondsSinceStart, accAngle, gyroAngle, measuredAngle, targetAngle,
