@@ -93,11 +93,10 @@ while not exitRequested:
     timeDelta = (perf_counter_ns() - prevLoopTime) / 1e9  #[sec]
     prevLoopTime = perf_counter_ns()
     secondsSinceStart = (perf_counter_ns() - startTime) / 1e9
-    imu.readSensor()
     #imu.computeOrientation()
 
     #read accelerometer
-    axr, ayr, azr = imu.AccelVals[0] + ax_offset, imu.AccelVals[1] + ay_offset, imu.AccelVals[2] - az_offset
+    axr, ayr, azr = imu.readAccelerometerMaster()
     print(f"Axr: {axr} Ayr: {ayr} Azr: {azr}")
     ax, ay, az = ayr, -1 * azr, -1 * axr
     # ax, ay, az = imu.AccelVals[0], imu.AccelVals[1], imu.AccelVals[2]
@@ -105,9 +104,8 @@ while not exitRequested:
     accAngle = math.atan(-ax / math.sqrt(pow(ay, 2) + pow(az, 2))) * 180 / math.pi  #[deg]
     print("AccAngle: " + str(accAngle))
     #read gyroscope
-    gxr, gyr, gzr = imu.GyroVals[0] + gx_offset, imu.GyroVals[1] + gy_offset, imu.GyroVals[2] + gz_offset
+    gxr, gyr, gzr = imu.readGyroscopeMaster()
     gx, gy, gz = gyr, -1 * gzr, -1 * gxr
-    # gx, gy, gz = imu.GyroVals[0], imu.GyroVals[1], imu.GyroVals[2]
     #gx, gy, gz = imu.readGyroscopeMaster()  #[deg/s]
     gyroAngleDelta = gy * timeDelta
     if math.isnan(gyroAngle): gyroAngle = accAngle
