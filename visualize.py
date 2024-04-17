@@ -1,58 +1,69 @@
-import sys
 import serial
-from PyQt5 import QtWidgets, QtCore
-from pyqtgraph import PlotWidget, plot
-import pyqtgraph as pg
+import matplotlib.pyplot as plt
+from asciimatics.screen import Screen
+from asciimatics.exceptions import ResizeScreenError, StopApplication
+import numpy as np
+import io
+import sys
 
-class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, *args, **kwargs):
-        super(MainWindow, self).__init__(*args, **kwargs)
+# Setup serial connection
+try:
+    ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)  # Ensure to set the correct serial port
+except serial.SerialException:
+    print("Failed to connect to Arduino. Check the device connection and port settings.")
+    sys.exit(1)
 
-        # Set up the serial port
-        self.serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
-        
-        # Create a timer to read data
-        self.timer = QtCore.QTimer()
-        self.timer.setInterval(500)  # Refresh rate in milliseconds
-        self.timer.timeout.connect(self.update_plot_data)
-        self.timer.start()
-        
-        # Create the main widget
-        self.graphWidget = pg.PlotWidget()
-        self.setCentralWidget(self.graphWidget)
-        
-        # Create plots for pitch and yaw
-        self.pitch_plot = self.graphWidget.plot(pen='r')
-        self.yaw_plot = self.graphWidget.plot(pen='b')
-        
-        # Data storage
-        self.pitch_data = []
-        self.yaw_data = []
-        
-        # Labels and styles
-        self.graphWidget.setBackground('w')
-        self.graphWidget.setTitle("Real-Time Pitch and Yaw", size="20pt")
-        self.graphWidget.setLabel('left', 'Angles', color='black', size=30)
-        self.graphWidget.setLabel('bottom', 'Time', color='black', size=30)
-        
-        self.graphWidget.showGrid(x=True, y=True)
-    
-    def update_plot_data(self):
+def read_arduino():
+    if ser.in_waiting > 0:
+        line = ser.readline().decode('utf-8').strip()
         try:
-            if self.serial_port.in_waiting > 0:
-                line = self.serial_port.readline().decode('utf-8').strip()
-                pitch, yaw, _, _, _ = map(float, line.split(','))
-                self.pitch_data.append(pitch)
-                self.yaw_data.append(yaw)
-                
-                # Update the plot
-                self.pitch_plot.setData(self.pitch_data, pen='r')
-                self.yaw_plot.setData(self.yaw_data, pen='b')
+            pitch, yaw, kp, ki, kd = map(float, line.split(','))
+            return pitch, yaw, kp, ki, kd
         except ValueError:
             print("Received malformed data or read error.")
+    return None
 
-if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    main = MainWindow()
-    main.show()
-    sys.exit(app.exec_())
+def draw_graph(screen):
+    data = []
+    while True:
+        reading = read_arduino()
+        if reading:
+            pitch, yaw, kp, ki, kd = reading
+            data.append((pitch, yaw))
+            data = data[-50:]  # Limit to last 50 readings for better performance on small displays
+
+            # Clear the previous content
+            screen.clear_buffer(screen.COLOUR_WHITE, screen.A_NORMAL, screen.COLOUR_BLACK)
+            screen.refresh()
+
+            # Display PID values as text
+            screen.print_at(f'Pitch: {pitch:.2f}   Yaw: {yaw:.2f}', 0, 0)
+            screen.print_at(f'Kp: {kp:.2f}   Ki: {ki:.2f}   Kd: {kd:.2f}', 0, 1)
+
+            # Plotting the data using matplotlib
+            plt.figure(figsize=(5, 2))
+            plt.plot([d[0] for d in data], label='Pitch')
+            plt.plot([d[1] for d in data], label='Yaw')
+            plt.legend(loc='upper right')
+            plt.title('Pitch and Yaw Over Time')
+            plt.grid(True)
+
+            # Convert plot to image and display in terminal
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png')
+            buf.seek(0)
+            screen.print_at('Graph updating...', 0, 2)  # Placeholder for actual graph integration
+            screen.refresh()
+            plt.close()
+        else:
+            screen.print_at('No new data...', 0, 2)
+            screen.refresh()
+
+try:
+    Screen.wrapper(draw_graph)
+except ResizeScreenError:
+    print("Screen size is too small. Please resize your window.")
+except KeyboardInterrupt:
+    print("Program exited gracefully.")
+finally:
+    ser.close()  # Close the serial port
