@@ -2,18 +2,35 @@ import serial
 import matplotlib.pyplot as plt
 from asciimatics.screen import Screen
 from asciimatics.exceptions import ResizeScreenError, StopApplication
+from serial.tools import list_ports
 import numpy as np
 import io
 import sys
 
-# Setup serial connection
-try:
-    ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)  # Ensure to set the correct serial port
-except serial.SerialException:
-    print("Failed to connect to Arduino. Check the device connection and port settings.")
-    sys.exit(1)
+def find_arduino():
+    """Search for an Arduino in connected serial devices."""
+    ports = list_ports.comports()
+    for port in ports:
+        if "Arduino" in port.description or "USB Serial Device" in port.description:
+            return port.device
+    return None
 
-def read_arduino():
+def setup_serial_connection():
+    """Establishes serial connection with Arduino."""
+    arduino_port = find_arduino()
+    if arduino_port is None:
+        print("No Arduino found. Please connect your Arduino device.")
+        sys.exit(1)
+    try:
+        ser = serial.Serial(arduino_port, 115200, timeout=1)
+        print(f"Connected to Arduino on {arduino_port}")
+        return ser
+    except serial.SerialException:
+        print("Failed to connect on ", arduino_port)
+        sys.exit(1)
+
+def read_arduino(ser):
+    """Read data from Arduino serial connection."""
     if ser.in_waiting > 0:
         line = ser.readline().decode('utf-8').strip()
         try:
@@ -23,47 +40,33 @@ def read_arduino():
             print("Received malformed data or read error.")
     return None
 
-def draw_graph(screen):
+def draw_graph(screen, ser):
+    """Function to draw graph and display values on screen."""
     data = []
     while True:
-        reading = read_arduino()
+        reading = read_arduino(ser)
         if reading:
             pitch, yaw, kp, ki, kd = reading
             data.append((pitch, yaw))
-            data = data[-50:]  # Limit to last 50 readings for better performance on small displays
-
-            # Clear the previous content
-            screen.clear_buffer(screen.COLOUR_WHITE, screen.A_NORMAL, screen.COLOUR_BLACK)
-            screen.refresh()
+            data = data[-50:]  # Keep last 50 readings
 
             # Display PID values as text
+            screen.clear()
             screen.print_at(f'Pitch: {pitch:.2f}   Yaw: {yaw:.2f}', 0, 0)
             screen.print_at(f'Kp: {kp:.2f}   Ki: {ki:.2f}   Kd: {kd:.2f}', 0, 1)
 
-            # Plotting the data using matplotlib
-            plt.figure(figsize=(5, 2))
-            plt.plot([d[0] for d in data], label='Pitch')
-            plt.plot([d[1] for d in data], label='Yaw')
-            plt.legend(loc='upper right')
-            plt.title('Pitch and Yaw Over Time')
-            plt.grid(True)
-
-            # Convert plot to image and display in terminal
-            buf = io.BytesIO()
-            plt.savefig(buf, format='png')
-            buf.seek(0)
-            screen.print_at('Graph updating...', 0, 2)  # Placeholder for actual graph integration
+            # Update screen
             screen.refresh()
-            plt.close()
         else:
-            screen.print_at('No new data...', 0, 2)
+            screen.print_at('Waiting for new data...', 0, 2)
             screen.refresh()
 
 try:
-    Screen.wrapper(draw_graph)
+    ser = setup_serial_connection()
+    Screen.wrapper(draw_graph, arguments=(ser,))
 except ResizeScreenError:
     print("Screen size is too small. Please resize your window.")
 except KeyboardInterrupt:
     print("Program exited gracefully.")
 finally:
-    ser.close()  # Close the serial port
+    ser.close()  # Ensure serial connection is closed properly
